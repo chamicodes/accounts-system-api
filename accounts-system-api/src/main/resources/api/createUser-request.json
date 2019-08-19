@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "title": "Create User",
+  "required": [
+    "username",
+    "fullname",
+    "birthday",
+    "gender"
+  ],
+  "properties": {
+    "username": {
+		"type": "string"
+    },
+    "fullname": {
+		"type": "string"
+    },
+    "birthday": {
+      	"type": "string"
+    },
+    "gender": {
+      "type": "string",
+	   "enum": ["M","F"]
+    }
+  }
+}

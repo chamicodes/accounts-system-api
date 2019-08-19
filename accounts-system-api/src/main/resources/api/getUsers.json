@@ -1,0 +1,19 @@
+{
+  "Users": [
+      {
+        "username": "johnKing",
+        "fullname": "John Snow",
+        "age": 23,
+        "gender": "male",
+        "dateRegistered": "20-08-2012"
+      },
+       {
+        "username": "dannyQueen",
+        "fullname": "Danerys Targargyen",
+        "age": 27,
+        "gender": "female",
+        "dateRegistered": "20-09-2012"
+      }
+  ],
+  "responseCode": 200
+}

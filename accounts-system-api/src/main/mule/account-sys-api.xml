@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd">
+    <http:listener-config name="account-sys-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="account-sys-api-config" raml="account-sys-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <db:config name="MySQL_Database_Config" doc:name="Database Config" doc:id="38a61d1b-0cdf-4288-805c-c92a3a20a175" >
+		<db:my-sql-connection host="${mysql.host}" port="${mysql.port}" user="${mysql.username}" password="${mysql.password}" database="${mysql.database}" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="ada9e983-abfa-483b-8d08-2764a04b8db8" file="config/configuration.yaml" />
+	<flow name="account-sys-api-main">
+        <http:listener config-ref="account-sys-api-httpListenerConfig" path="/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+        <set-variable value="${auth_id}" doc:name="Save Auth ID" doc:id="c263025f-0846-4b92-8d7c-2392aedbcd18" variableName="authId"/>
+		<choice doc:name="Check Headers" doc:id="5d67771c-7f51-46c2-b93f-a6b814acb56b" >
+			<when expression="#[attributes.headers['Authorization'] == vars.authId]">
+				<apikit:router config-ref="account-sys-api-config" />
+			</when>
+			<otherwise >
+				<set-variable value="#[401]" doc:name="Set http status to 401" doc:id="95aba906-b63d-431c-a0c9-3bf489edd93f" variableName="httpStatus"/>
+				<set-payload value="Unauthorized" doc:name="Set 401 Payload" doc:id="b820eef0-a445-46da-b802-f41c7044ef02" />
+			</otherwise>
+		</choice>
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST" enableNotifications="true" logException="true">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="e6d6ee3f-7681-4611-9c62-c27355f6b742">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Bad Request",
+	responseCode : 400
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="728c556f-0e40-4b39-a582-acf704c87669">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Resource not found",
+	responseCode : 404
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="83fdd3f1-7ac9-4f7a-95bd-c5109baae80a">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Method not allowed",
+	responseCode : 405
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[405]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="4120451a-67d5-47ee-8704-458fe09c60e8">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Not acceptable",
+	responseCode : 406
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[406]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE" enableNotifications="true" logException="true">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="727ad99f-5056-4681-aab9-99beb6d07ffd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Unsupported media type",
+	responseCode : 415
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[415]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED" enableNotifications="true" logException="true">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="84404983-cb3f-428d-bf6b-85190749a05f">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Not Implemented",
+	responseCode : 501
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[501]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="224ec4c1-95fe-495a-9665-399090f5034f" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="63b308fa-9eba-42d2-b19f-0ccf763369e1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "system error",
+	"responseCode": 500
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="account-sys-api-console">
+        <http:listener config-ref="account-sys-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="account-sys-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+	<flow name="get:\users">
+		<logger level="INFO" doc:name="Log start" doc:id="4234d7d1-dfdd-4c21-a140-8bce440de2d8" message="&lt;get:\users&gt;"/>
+		<db:select doc:id="4dc9dcf7-60ec-444c-8aa1-638bd90bb069" config-ref="MySQL_Database_Config" doc:name="Get All Users">
+			<non-repeatable-iterable />
+			<db:sql>select account.username, userdetails.fullname, userdetails.birthday, userdetails.gender, account.dateregistered FROM account, userdetails
+WHERE account.userId = userdetails.userDetailId AND account.active = 'true'</db:sql>
+		</db:select>
+		<ee:transform doc:name="Final Payload" doc:id="8e763bcf-6223-411b-b2f3-291823c159d5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	Users:
+	payload map ((payloadAccount,index)->{
+			username: payloadAccount.username,
+			fullname: payloadAccount.fullname,
+			age: (now() as Date {format: "yyyyMMddHHmmss"} - payloadAccount.birthday as Date {format: "yyyyMMddHHmmss"}).years,
+			gender: if(payloadAccount[0].gender contains 'f') "Female" else "Male",
+			dateregistered: payloadAccount.dateRegistered as Date {format: "dd-MM-yyyy"},
+		}),
+	responseCode: 200
+}
+		]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" message="&lt;get:\users&gt; Response Payload #[payload]" doc:name="Log Payload"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="41b6d1ff-b23f-41a4-b0d4-3619176bdb36" >
+				<logger level="INFO" doc:name="Log error" doc:id="064f71f9-c36c-41fd-a5f9-0e47194781c2" message="ERROR : #[payload] Code:  #[attributes.statusCode]"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="get:\users\(username)">
+        <logger level="INFO" doc:name="Log start" doc:id="e23d7592-915c-469e-9539-cae73126c7bd" message="&lt;get:\users\(username)&gt; Username: #[attributes.uriParams.username]"/>
+		<db:select doc:name="Get User by username" doc:id="4a31a3a2-faad-467a-9dd1-430cf641411b" config-ref="MySQL_Database_Config">
+			<db:sql >select account.username, userdetails.fullname, userdetails.birthday, userdetails.gender, account.dateregistered FROM account, userdetails
+WHERE account.userId = userdetails.userDetailId AND account.active = 'true' AND account.username = :userName</db:sql>
+			<db:input-parameters ><![CDATA[#[{'userName' : attributes.uriParams.username}]]]></db:input-parameters>
+		</db:select>
+        <choice doc:name="Checks if payload size is 0" doc:id="358180e4-a8ff-4e5d-b21d-c27808529f37" >
+			<when expression="#[sizeOf(payload) != 0]">
+				<ee:transform doc:name="Final Payload" doc:id="e3e0a098-9384-4e20-86ce-efa91956b1ba">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	username: payload[0].username,
+	fullname: payload[0].fullname,
+	age: (now() as Date - payload.birthday[0] as Date).years,
+	gender: if(payload[0].gender contains 'f') "Female" else "Male",
+	dateregistered: payload[0].dateRegistered as Date {format: "dd-MM-yyyy"},
+	responseCode: 200
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<logger level="INFO" doc:name="Log Payload" doc:id="2ecdd727-29a8-41d2-b83d-761fbed7f330" message="&lt;get:/users/{username}&gt; Response Payload #[payload]" />
+			</when>
+			<otherwise >
+				<logger level="ERROR" doc:name="Logger" doc:id="6804976b-bb85-40f5-864f-535c55369b58" message="No user found with username: #[vars.username]"/>
+				<set-variable value="404" doc:name="Set http status to 404" doc:id="56112a99-c159-4328-9326-7d1754aece2c" variableName="httpStatus"/>
+				<ee:transform doc:name="404 Payload" doc:id="fd8275b3-f601-4b07-ac63-8d73877595f7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "User not found",
+	responseCode : 404
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3baff753-6f37-4b49-8dce-c404dba73875" >
+				<logger level="INFO" doc:name="Log error" doc:id="69cfe141-dae3-4d87-8a63-f5b585f40598" message="ERROR : #[payload] Code:  #[attributes.statusCode]"/>
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="post:\users">
+		<logger level="INFO" doc:name="Log start" doc:id="c44d53a8-60f8-4ce4-be72-92e11dd56730" message="&lt;post:\users&gt; Payload: #[payload]"/>
+		<foreach doc:name="For Each" doc:id="566aaa7b-e104-476e-bd46-4dc632772437">
+			<logger level="INFO" doc:name="Log payload" doc:id="030465ab-03ea-49d4-8c6a-bbbcfb672c9d" message="Processing(#[vars.counter]): #[payload]" />
+			<try doc:name="Try" doc:id="fc2e3352-676a-4839-8b10-86c377b9d53d" >
+				<flow-ref doc:name="create-single-user" doc:id="7df1a7ed-2ea7-401d-bec4-726ac350eef5" name="create-single-user" />
+				<error-handler >
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="31775aff-58ed-4dc3-8e44-d51f729b0678">
+				<logger level="INFO" doc:name="Log error" doc:id="1c251ddb-5135-429c-bcb4-f2043590ca50" message="ERROR : #[payload] Code:  #[attributes.statusCode]" />
+						<set-variable value="500" doc:name="Set http status to 500" doc:id="15d4978b-249d-430d-8561-b994ce74b14b" variableName="httpStatus"/>
+			</on-error-propagate>
+				</error-handler>
+			</try>
+		</foreach>
+		<set-variable value="202" doc:name="Set http status to 202" doc:id="a16aecf1-b8e8-487a-b6d4-7f71b1282c3f" variableName="httpStatus"/>
+		<ee:transform doc:name="Final Payload" doc:id="c689dbbe-07b0-412b-b89b-949c4ed27add" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "success",
+	"responseCode": 202
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+    </flow>
+	<flow name="post:\user" doc:id="37e36cc6-6da9-461b-8c05-ff17c22e6092" >
+		<logger level="INFO" doc:name="Log start" doc:id="ff81cf79-acf3-4d65-bf6a-81fcf1e02611" message="&lt;post:\user&gt; Payload: #[payload]"/>
+		<try doc:name="Try" doc:id="08a0ba37-0d91-4ddd-b999-578c67789420" >
+			<flow-ref doc:name="create-single-user" doc:id="fd154729-f5dc-4166-88b6-6035f906112e" name="create-single-user" />
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="30ee4c82-28aa-4047-81e4-8e5d193d4cee">
+				<logger level="INFO" doc:name="Log error" doc:id="741dba6e-a81e-40aa-a6ea-3baf3e33f4fd" message="ERROR : #[payload] Code:  #[attributes.statusCode]" />
+				<set-variable value="500" doc:name="Set http status to 500" doc:id="e1632233-e4bd-4519-b0b9-0426676492b7" variableName="httpStatus" />
+			</on-error-propagate>
+			</error-handler>
+		</try>
+		<set-variable value="201" doc:name="Set http status to 201" doc:id="2c624768-0541-4a17-be6f-2b8b467ec177" variableName="httpStatus"/>
+		<ee:transform doc:name="Set Final Payload" doc:id="0ff004fe-d7b6-4269-8b76-78d715c6f1e1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "success",
+	"responseCode": vars.httpStatus
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<sub-flow name="create-single-user" doc:id="c47dbe36-fe60-4e7c-8a7d-812da4bccec7" >
+		<ee:transform doc:name="Save to Map" doc:id="d3a27c98-24d3-41f0-8199-0e99ca0f5031" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="userMap" ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log payload" doc:id="02e4f972-f7fa-4724-b6dd-5514909307ab" message="user map payload #[vars.userMap]"/>
+		<try doc:name="Try" doc:id="85a5843f-5269-4728-bda1-441dc31d8513" >
+			<flow-ref doc:name="db-insert-userdetails" doc:id="cc924610-cefd-4e58-aed3-8f3742e232b5" name="db-insert-userdetails" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e4003a70-1a91-4677-ab87-f23b8f7fd912" >
+					<logger level="INFO" doc:name="Logger" doc:id="9a329884-dbc1-4ae4-8287-dbcf5cde7e57" message="ERROR : #[payload] Code:  #[attributes.statusCode]"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<set-variable value="#[payload.generatedKeys[0]]" doc:name="Set New User ID" doc:id="643c7da2-4b59-47cd-88d1-7b7bb54eac29" variableName="newUserId" />
+		<logger level="INFO" doc:name="Log User ID" doc:id="dc548e5a-14a0-4ccc-85ed-1f9a801560ee" message="USER ID: #[vars.newUserId]"/>
+		<try doc:name="Try" doc:id="26c1eb7b-3ca4-47d4-9619-d1b87c5ad296" >
+			<flow-ref doc:name="db-insert-account" doc:id="80fa953e-45a6-4e02-a72b-084ee4bd6fbc" name="db-insert-account" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="260bf21b-70a6-49af-9123-03435233b7e5" >
+					<logger level="INFO" doc:name="Logger" doc:id="bc5491fb-8404-447d-a0b2-cf0f0cd1ccd4" message="ERROR : #[payload] Code:  #[attributes.statusCode]"/>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Log Account" doc:id="c1e141a3-2fde-4a9a-8e93-dafaf3300e57" message="Successfully created records in User Details &amp; Account"/>
+	</sub-flow>
+	<sub-flow name="db-insert-userdetails" doc:id="ca70c5ba-a78e-45b4-b2c3-6aaa5c52847a" >
+		<logger level="INFO" doc:name="Log Payload" doc:id="eae03f91-b922-419e-939a-2013bbf7ab10" message="User Details Payload #[payload]" />
+		<db:insert doc:name="Insert Into User Details" doc:id="29bdac5c-ab2c-44a1-9a26-134a18a6d316" config-ref="MySQL_Database_Config" autoGenerateKeys="true">
+			<db:sql>INSERT INTO userdetails (fullName, birthday, gender)
+VALUES (:fullName, :birthday, :gender)</db:sql>
+			<db:input-parameters><![CDATA[#[{'fullName' : vars.userMap.fullname,'birthday' : vars.userMap.birthday, 'gender' : vars.userMap.gender}]]]></db:input-parameters>
+
+		</db:insert>
+		<logger level="INFO" doc:name="Log response" doc:id="435da008-77ae-49fb-a79a-53b075a0ba22" message="&lt;database: userdetails&gt; Payload #[payload]" />
+	</sub-flow>
+	<sub-flow name="db-insert-account" doc:id="f6768f22-563c-41f2-aa5a-5e46b82a013e" >
+		<logger level="INFO" doc:name="Log Payload" doc:id="61eefdae-aebf-4347-8761-261d80a82994" message="Account Payload: #[payload]" />
+		<db:insert doc:name="Insert Into Account" doc:id="02ada63c-3e40-4b6e-860b-4cb8aa73e6a1" config-ref="MySQL_Database_Config">
+			<db:sql>INSERT INTO account (userId, username, active, dateregistered)
+VALUES (:userId, :userName, &quot;true&quot;, :dateRegistered)</db:sql>
+			<db:input-parameters><![CDATA[#[{
+	'userId' : vars.newUserId, 
+	'userName' : vars.userMap.username, 
+	'dateRegistered': now() as Date
+}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="Log response" doc:id="2b49fcac-dc98-4b01-95d9-333aaaaee186" message="&lt;database: account&gt; Payload #[payload]" />
+	</sub-flow>
+</mule>

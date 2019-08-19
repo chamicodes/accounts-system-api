@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="new-test-suite.xml" />
+	<munit:test name="new-test-suite-get:\usersTest" doc:id="10da3b2a-d81e-435a-8d32-8d11cbfe50c4" description="Test">
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to get:\users" doc:id="3e93e122-2947-4be8-9853-96600bd78534" name="get:\users"/>
+		</munit:execution>
+	</munit:test>
+	<munit:test name="new-test-suite-get:\users\(username)Test" doc:id="57b7e6a8-7762-4870-902b-67e9c9c6f2d5" description="Test">
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to get:\users\(username)" doc:id="53f688c1-01fc-4229-a781-530ca8c886c4" name="get:\users\(username)"/>
+		</munit:execution>
+	</munit:test>
+	<munit:test name="new-test-suite-post:\usersTest" doc:id="b5e73506-d3ce-45eb-bee9-39de2ddf5eda" description="Test">
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to post:\users" doc:id="a65509c4-67e7-4459-8286-067c68edd155" name="post:\users"/>
+		</munit:execution>
+	</munit:test>
+	<munit:test name="new-test-suite-post:\userTest" doc:id="6cb83195-e1ab-4f03-a29d-9f678918a7e2" description="Test">
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to post:\user" doc:id="5f3ac5ec-96b2-4838-b311-cebfb20adb61" name="post:\user"/>
+		</munit:execution>
+	</munit:test>
+
+
+</mule>

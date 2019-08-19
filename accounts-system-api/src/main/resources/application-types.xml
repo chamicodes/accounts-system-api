@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="createUser" format="json">
+      <types:shape format="json-schema" location="api/createUser-request.json"/>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#d3a27c98-24d3-41f0-8199-0e99ca0f5031">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="createUser"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

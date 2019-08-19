@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="account-sys-api-test-suite.xml" />
+	<munit:test name="account-sys-api-test-suite-get:\usersTest" doc:id="e668b6f9-3061-4f8d-8159-a3980be22149" description="Test" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set username" doc:id="1ff9794b-0d89-4c0a-b52c-777380f41ed2" >
+				<munit:variables >
+					<munit:variable key="username" value="ailee" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="get:\users\(username)" doc:id="709fd81a-2e6f-4fa3-85df-815922367687" name="get:\users\(username)"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:id="451bf239-f2da-4d26-bd46-2b458cb44048" doc:name="" expression="#[payload]" is="#[MunitTools::notNullValue()]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="test-suite-get:\userTest-404" description="Test" doc:id="b5b8db4c-c1e9-49cf-90f2-0693ed9a1ee0" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set username" doc:id="ff2f0089-629b-4835-b7a7-6638dc15f801" >
+				<munit:variables >
+					<munit:variable key="username" value="cha" />
+				</munit:variables>
+			</munit:set-event>
+			<flow-ref doc:name="get:\users\(username)" doc:id="2d0b2972-d5d2-48e9-b55c-482b286caf54" name="get:\users\(username)"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:id="e84df4f6-846b-4752-981c-65fcf69509b5" doc:name="" actual="#[vars.httpStatus]" expected="#['404']"/>
+		
+</munit:validation>
+	</munit:test>
+	<munit:test name="test-suite-get:\usersTest-success" description="Test" doc:id="c39232ea-7ab2-455a-a65f-ed515198cd64" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="760dec93-a1b5-41df-974e-48cd44dc1309" >
+				<munit:attributes value="{
+headers : {'authId' :'j32io33ise4k2qq1'}
+}" />
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to get:\users" doc:id="88328b2b-08bb-46ba-8196-0d383b339eb1" name="get:\users"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="dd71ef92-fbc6-49ee-ac04-046242515c31" actual="#[payload.responseCode]" expected="#[200]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="test-suite-get:\usersTest-401" description="Test" doc:id="c0372019-74b3-4dd9-8090-d8d12f2a1a32" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="4661cc13-f0ff-47c3-a529-25075e5362e7" >
+				<munit:attributes value="{
+headers : {'authId' :'test'}
+}" />
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to get:\users" doc:id="d588d37a-023a-4b5c-a599-a7a9aafb37f2" name="get:\users"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="85b74c6e-a0a8-45b9-97a7-c32e87ca888b" actual="#[vars.httpStatus]" expected="#['401']" message="Invalid Auth ID!"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="account-sys-api-test-suite-post:\userTest" doc:id="d388e53e-ef36-4e87-82c4-c367a839c814" description="Test" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="224a750a-d130-46de-8f27-358155b9459e" >
+				<munit:payload value='{
+    "username": "chamidiaries",
+    "fullname": "Charmaine Tahimic",
+    "birthday": "1991-03-23",
+    "gender": "f"
+}' mediaType="application/json" />
+
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to post:\user" doc:id="31cdb58e-2e2d-4b74-924b-fe7420190ace" name="post:\user"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="ee88b241-578c-43f9-bc64-3ac26b44e79b" actual="#[vars.httpStatus]" expected="201"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="account-sys-api-test-suite-post:\userTest-500" doc:id="06f47939-c5ac-41ae-8b53-f6a15da97c51" description="Test" ignore="true">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="244d0081-c4d3-4962-a2ef-ef3890c9cdc1" >
+				<munit:payload value='{
+    "username": "chami23",
+    "fullname": "Charmaine Tahimic",
+    "birthday": "date"
+}' mediaType="application/json" />
+
+
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to post:\user" doc:id="52055495-5bd7-4b7b-a958-57a23738e199" name="post:\user"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="918d9c95-bb5d-4bf1-9766-2008bb2f6499" actual="#[vars.httpStatus]" expected="500"/>
+		
+</munit:validation>
+	</munit:test>
+	<munit:test name="account-sys-api-test-suite-post:\usersTest" doc:id="91f93058-99f9-41b9-83a2-6d603e9be9c5" description="Test">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="83aa817e-82a9-48cb-8b6a-dfc26b495d59" >
+				<munit:payload value='[{
+    "username": "Bora",
+    "fullname": "Bora Sistar",
+    "birthday": "1989-03-17",
+    "gender": "F"
+},
+{
+    "username": "Gummy",
+    "fullname": "gummy",
+    "birthday": "1986-09-23",
+    "gender": "f"
+}]' mediaType="application/json" />
+
+
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to post:\users" doc:id="d6d91fbf-05dd-4ea5-b941-5467964c554b" name="post:\users"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="887fd21c-50b1-496a-acc5-6ec2c1b7052c" actual="#[vars.httpStatus]" expected="202"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="account-sys-api-test-suite-post:\usersTest-500" doc:id="0b33d5c7-fa69-4813-9ed9-e332826e117b" description="Test">
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="f7fa46cf-09c6-4ae9-a5ee-7cbe09af077b" >
+				<munit:payload value='[{
+    "username": "Bora",
+    "fullname": "Bora Sistar",
+    "birthday": "date",
+    "gender": "F"
+},
+{
+    "username": "Gummy",
+    "fullname": "gummy",
+    "birthday": "1986-09-23",
+    "gender": "f"
+}]' mediaType="application/json" />
+
+
+
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to post:\users" doc:id="192d4de5-747a-4247-8d36-03d6d0f75d13" name="post:\users"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="ef28ecc9-7f40-4032-a51b-af41e7e557d7" actual="#[vars.httpStatus]" expected="500"/>
+		
+</munit:validation>
+	</munit:test>
+
+
+</mule>

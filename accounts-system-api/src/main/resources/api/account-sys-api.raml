@@ -1,0 +1,180 @@
+#%RAML 1.0
+title: Account System API MuleSoft App
+version: 1.0
+baseUri: account-sys-api.cloudhub.io
+
+mediaType: application/json
+documentation: 
+  - title: ACCOUNT SYSTEM API
+    content: |
+      API to wrap the MYSQL DB Chami calls.
+
+traits: 
+  knownClient:
+    usage: Apply this to every method. 
+    description: authID must be specified on every call
+    headers:
+      Authorization:
+        type: string
+        required: true
+        example: Authorization={authId}
+
+/users:
+  post:
+    is: [knownClient]
+    description: Create new org by cloning
+    body: 
+      application/json:
+        example: !include createUsers-request.json
+    responses: 
+      201:
+         body: 
+          application/json:
+            example:
+              {
+                "message": "success",
+                "responseCode": 202
+              }
+      400:
+        description: Bad request.
+        body: 
+          application/json:
+              example:
+                {
+                  "message" : "Bad request",
+                  "responseCode" : 400
+                }
+      401:
+        description: Unauthorized. Invalid Auth ID.
+        body: 
+          application/json:
+              example:
+                {
+                  "message" : "Unauthorized",
+                  "responseCode" : 401
+                }
+      500:
+        description: Error occured while calling the database.
+        body: 
+          application/json:
+              example:
+                {
+                  "message" : "System Error",
+                  "responseCode" : 500
+                }
+                
+  get:
+      is: [knownClient]
+      description: Get the list of users
+      responses: 
+        200:
+          body:
+            application/json:
+              example: !include getUsers.json
+                
+        401:
+          description: Unauthorized. Invalid Auth ID.
+          body: 
+            application/json:
+                example:
+                  {
+                    "message" : "Unauthorized",
+                    "responseCode" : 401
+                  }
+        404:
+          description: User not found.
+          body: 
+            application/json:
+                example:
+                  {
+                    "message" : "User not Found",
+                    "responseCode" : 404
+                  }
+        500:
+          description: Error occured while calling the database.
+          body: 
+            application/json:
+                example:
+                  {
+                    "message" : "System Error",
+                    "responseCode" : 500
+                  }
+  /{username}:
+    get:
+      is: [knownClient]
+      description: Get User based on username
+      responses: 
+        200:
+          body:
+            application/json:
+              example: !include getUser.json
+        401:
+          description: Unauthorized. Invalid Auth ID.
+          body: 
+            application/json:
+                example:
+                  {
+                    "message" : "Unauthorized",
+                    "responseCode" : 401
+                  }
+        404:
+          description: User not found.
+          body: 
+            application/json:
+                example:
+                  {
+                    "message" : "User not Found",
+                    "responseCode" : 404
+                  }
+        500:
+          description: Error occured while calling the database.
+          body: 
+            application/json:
+                example:
+                  {
+                    "message" : "System Error",
+                    "responseCode" : 500
+                  }
+/user:
+  post:
+    is: [knownClient]
+    description: Create new org by cloning
+    body: 
+      application/json:
+        example: !include createUser-request.json
+    responses: 
+      201:
+         body: 
+          application/json:
+            example:
+                {
+                  "message": "success",
+                  "responseCode": 200
+                }
+      400:
+        description: Bad request.
+        body: 
+          application/json:
+              example:
+                {
+                  "message" : "Bad request",
+                  "responseCode" : 400
+                }
+      401:
+        description: Unauthorized. Invalid Auth ID.
+        body: 
+          application/json:
+              example:
+                {
+                  "message" : "Unauthorized",
+                  "responseCode" : 401
+                }
+      500:
+        description: Error occured while calling the database.
+        body: 
+          application/json:
+              example:
+                {
+                  "message" : "System Error",
+                  "responseCode" : 500
+                }
